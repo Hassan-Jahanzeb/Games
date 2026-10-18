@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -15,13 +16,19 @@ import {
 } from "framer-motion";
 import {
   ArrowLeft,
-  CheckCircle2,
+  Brain,
+  Calculator,
   Delete,
   Eraser,
+  Flame,
+  GraduationCap,
   Grid3X3,
   Heart,
+  Play,
   Lightbulb,
   RotateCcw,
+  Keyboard,
+  Layers,
   Shuffle,
   SpellCheck,
   Timer,
@@ -35,7 +42,22 @@ import {
 /* Data & helpers                                                      */
 /* ------------------------------------------------------------------ */
 
-type GameId = "hangman" | "scramble" | "guess" | "sliding";
+type GameId =
+  | "hangman"
+  | "scramble"
+  | "guess"
+  | "sliding"
+  | "simon"
+  | "sprint"
+  | "typing"
+  | "hanoi"
+  | "quiz";
+
+type GameProps = {
+  onWin: () => void;
+  onRestart: () => void;
+  onHome: () => void;
+};
 
 type Entry = { word: string; hint: string; topic: string; alts?: string[] };
 
@@ -125,6 +147,46 @@ const GAMES: {
     Icon: Grid3X3,
     button: "from-sky-400 to-blue-600",
     soft: "bg-sky-100 text-sky-700",
+  },
+  {
+    id: "sprint",
+    name: "Math Sprint",
+    blurb: "Solve as many sums as you can before time runs out.",
+    Icon: Calculator,
+    button: "from-amber-400 to-orange-600",
+    soft: "bg-amber-100 text-amber-700",
+  },
+  {
+    id: "quiz",
+    name: "Quiz Battle",
+    blurb: "Answer quick questions and build a streak.",
+    Icon: GraduationCap,
+    button: "from-indigo-500 to-blue-700",
+    soft: "bg-indigo-100 text-indigo-700",
+  },
+  {
+    id: "simon",
+    name: "Pattern Memory",
+    blurb: "Watch the colour pattern, then repeat it.",
+    Icon: Brain,
+    button: "from-pink-500 to-fuchsia-600",
+    soft: "bg-pink-100 text-pink-700",
+  },
+  {
+    id: "typing",
+    name: "Typing Race",
+    blurb: "Type the words before the timer runs out.",
+    Icon: Keyboard,
+    button: "from-teal-400 to-cyan-600",
+    soft: "bg-cyan-100 text-cyan-700",
+  },
+  {
+    id: "hanoi",
+    name: "Tower of Hanoi",
+    blurb: "Move the whole tower to the last peg.",
+    Icon: Layers,
+    button: "from-lime-500 to-green-600",
+    soft: "bg-lime-100 text-lime-700",
   },
 ];
 
@@ -1172,6 +1234,866 @@ function Stat({ label, value, icon }: { label: string; value: string; icon?: Rea
 }
 
 /* ------------------------------------------------------------------ */
+/* Game 6: Math Sprint                                                 */
+/* ------------------------------------------------------------------ */
+
+const SPRINT_TIME = 45;
+const SPRINT_GOAL = 10;
+
+type MathQ = { text: string; answer: number; options: number[] };
+
+function makeMathQ(level: number): MathQ {
+  const rnd = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
+  const ops = level === 1 ? ["+", "-"] : level === 2 ? ["+", "-", "×"] : ["+", "-", "×", "×"];
+  const op = ops[rnd(0, ops.length - 1)];
+  let a: number, b: number, answer: number;
+
+  if (op === "+") {
+    const max = level === 1 ? 12 : level === 2 ? 40 : 90;
+    a = rnd(2, max);
+    b = rnd(2, max);
+    answer = a + b;
+  } else if (op === "-") {
+    const max = level === 1 ? 12 : level === 2 ? 40 : 90;
+    a = rnd(5, max + 10);
+    b = rnd(1, a);
+    answer = a - b;
+  } else {
+    const max = level === 2 ? 6 : 12;
+    a = rnd(2, max);
+    b = rnd(2, max);
+    answer = a * b;
+  }
+
+  const spread = Math.max(4, Math.round(answer * 0.25));
+  const wrong = new Set<number>();
+  while (wrong.size < 3) {
+    const d = answer + rnd(-spread, spread);
+    if (d !== answer && d >= 0) wrong.add(d);
+  }
+  return { text: `${a} ${op} ${b}`, answer, options: shuffle([answer, ...wrong]) };
+}
+
+function Sprint({ onWin, onRestart, onHome }: GameProps) {
+  const [started, setStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(SPRINT_TIME);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [best, setBest] = useState(0);
+  const [asked, setAsked] = useState(0);
+  const [q, setQ] = useState<MathQ>(() => makeMathQ(1));
+  const [picked, setPicked] = useState<number | null>(null);
+  const rewarded = useRef(false);
+  const over = started && timeLeft <= 0;
+
+  useEffect(() => {
+    if (!started || over) return;
+    const id = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(id);
+  }, [started, over]);
+
+  useEffect(() => {
+    if (over && score >= SPRINT_GOAL && !rewarded.current) {
+      rewarded.current = true;
+      onWin();
+    }
+  }, [over, score, onWin]);
+
+  const choose = (opt: number) => {
+    if (picked !== null || over) return;
+    setPicked(opt);
+    const ok = opt === q.answer;
+    const newScore = ok ? score + 1 : score;
+    const newStreak = ok ? streak + 1 : 0;
+    setScore(newScore);
+    setStreak(newStreak);
+    setBest((b) => Math.max(b, newStreak));
+    if (!ok) setTimeLeft((t) => Math.max(0, t - 3));
+
+    setTimeout(
+      () => {
+        setQ(makeMathQ(newScore >= 8 ? 3 : newScore >= 4 ? 2 : 1));
+        setPicked(null);
+        setAsked((a) => a + 1);
+      },
+      ok ? 350 : 700
+    );
+  };
+
+  if (!started) {
+    return (
+      <div className="text-center">
+        <Calculator size={48} className="mx-auto text-amber-500" />
+        <h2 className="mt-3 text-2xl font-extrabold">Ready to race the clock?</h2>
+        <p className="mx-auto mt-2 max-w-sm text-slate-500">
+          Solve {SPRINT_GOAL} questions in {SPRINT_TIME} seconds to win. A wrong answer costs 3 seconds, and the sums get harder as you score.
+        </p>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setStarted(true)}
+          className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-600 px-8 py-4 text-lg font-bold text-white shadow-md"
+        >
+          <Play size={20} fill="currentColor" />
+          Start
+        </motion.button>
+      </div>
+    );
+  }
+
+  if (over) {
+    return (
+      <ResultCard
+        won={score >= SPRINT_GOAL}
+        message={`You solved ${score} ${score === 1 ? "question" : "questions"} (goal: ${SPRINT_GOAL}). Best streak: ${best}.`}
+        onAgain={onRestart}
+        onHome={onHome}
+      />
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-md text-center">
+      <div className="mb-4 flex items-center justify-between text-sm font-semibold">
+        <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
+          Solved {score}/{SPRINT_GOAL}
+        </span>
+        <span className="text-slate-500">{timeLeft}s</span>
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${
+            streak >= 3 ? "bg-orange-100 text-orange-600" : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          <Flame size={14} />
+          {streak}
+        </span>
+      </div>
+
+      <div className="mb-6 h-2.5 overflow-hidden rounded-full bg-slate-100">
+        <motion.div
+          className={`h-full rounded-full ${timeLeft <= 10 ? "bg-rose-500" : "bg-amber-500"}`}
+          animate={{ width: `${(timeLeft / SPRINT_TIME) * 100}%` }}
+          transition={{ duration: 1, ease: "linear" }}
+        />
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={asked}
+          initial={{ x: 40, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -40, opacity: 0 }}
+          transition={{ duration: 0.18 }}
+        >
+          <p className="mb-6 text-5xl font-extrabold tracking-tight text-slate-800 sm:text-6xl">
+            {q.text}
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {q.options.map((opt) => {
+              const isAnswer = picked !== null && opt === q.answer;
+              const isWrong = picked === opt && opt !== q.answer;
+              return (
+                <motion.button
+                  key={opt}
+                  whileHover={picked === null ? { y: -3 } : undefined}
+                  whileTap={picked === null ? { scale: 0.93 } : undefined}
+                  animate={isWrong ? { x: [0, -8, 8, -6, 6, 0] } : {}}
+                  onClick={() => choose(opt)}
+                  className={`rounded-2xl py-5 text-2xl font-extrabold transition-colors ${
+                    isAnswer
+                      ? "bg-emerald-500 text-white"
+                      : isWrong
+                        ? "bg-rose-500 text-white"
+                        : "bg-amber-50 text-amber-800 ring-2 ring-amber-200 hover:bg-amber-100"
+                  }`}
+                >
+                  {opt}
+                </motion.button>
+              );
+            })}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Game 8: Quiz Battle                                                 */
+/* ------------------------------------------------------------------ */
+
+const QUIZ_TOTAL = 8;
+const QUIZ_PASS = 6;
+const QUIZ_SECONDS = 15;
+
+type QuizItem = { q: string; a: string; wrong: string[]; fact: string };
+
+const QUIZ_BANK: QuizItem[] = [
+  { q: "Which planet is known as the Red Planet?", a: "Mars", wrong: ["Venus", "Jupiter", "Mercury"], fact: "Iron oxide (rust) on the surface gives Mars its red colour." },
+  { q: "How many sides does a hexagon have?", a: "6", wrong: ["5", "7", "8"], fact: "“Hex” means six in Greek." },
+  { q: "Which gas do plants take in from the air?", a: "Carbon dioxide", wrong: ["Oxygen", "Nitrogen", "Helium"], fact: "Plants use carbon dioxide, water and sunlight to make food." },
+  { q: "What is the capital of Japan?", a: "Tokyo", wrong: ["Kyoto", "Osaka", "Seoul"], fact: "Tokyo is one of the biggest cities in the world." },
+  { q: "Which is the largest ocean on Earth?", a: "Pacific Ocean", wrong: ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean"], fact: "The Pacific covers about a third of the planet's surface." },
+  { q: "What is 12 × 12?", a: "144", wrong: ["124", "132", "154"], fact: "12 squared is 144, which is also called a gross." },
+  { q: "At sea level, water boils at what temperature?", a: "100°C", wrong: ["80°C", "90°C", "120°C"], fact: "On high mountains water boils at a lower temperature." },
+  { q: "Which organ pumps blood around the body?", a: "Heart", wrong: ["Lungs", "Liver", "Brain"], fact: "Your heart beats about 100,000 times every day." },
+  { q: "Who wrote the play Romeo and Juliet?", a: "William Shakespeare", wrong: ["Charles Dickens", "Mark Twain", "Jane Austen"], fact: "Shakespeare wrote it around 1595." },
+  { q: "What is the closest star to Earth?", a: "The Sun", wrong: ["Sirius", "Polaris", "Proxima Centauri"], fact: "The Sun is about 150 million km away." },
+  { q: "How many continents are there?", a: "7", wrong: ["5", "6", "8"], fact: "They are Asia, Africa, North America, South America, Antarctica, Europe and Australia/Oceania." },
+  { q: "Which is the tallest animal in the world?", a: "Giraffe", wrong: ["Elephant", "Camel", "Ostrich"], fact: "A giraffe can grow taller than 5 metres." },
+  { q: "What is the chemical formula for water?", a: "H₂O", wrong: ["CO₂", "O₂", "NaCl"], fact: "Each water molecule has two hydrogen atoms and one oxygen atom." },
+  { q: "Which is the longest river in Pakistan?", a: "Indus", wrong: ["Ravi", "Jhelum", "Chenab"], fact: "The Indus flows about 3,000 km from Tibet to the Arabian Sea." },
+  { q: "What is the capital of Pakistan?", a: "Islamabad", wrong: ["Karachi", "Lahore", "Peshawar"], fact: "Islamabad became the capital in the 1960s." },
+  { q: "What is the square root of 81?", a: "9", wrong: ["8", "7", "11"], fact: "9 × 9 = 81." },
+  { q: "Which force pulls objects towards the Earth?", a: "Gravity", wrong: ["Magnetism", "Friction", "Wind"], fact: "Gravity keeps the Moon in orbit around Earth too." },
+  { q: "How many minutes are there in 2 hours?", a: "120", wrong: ["100", "90", "180"], fact: "60 minutes × 2 hours = 120 minutes." },
+  { q: "Which planet is famous for its bright rings?", a: "Saturn", wrong: ["Mars", "Earth", "Mercury"], fact: "Jupiter, Uranus and Neptune have rings too, but Saturn's are the brightest." },
+  { q: "What is the largest animal on Earth?", a: "Blue whale", wrong: ["African elephant", "Giraffe", "Hippopotamus"], fact: "A blue whale's heart is about the size of a small car." },
+  { q: "Which part of a plant absorbs water from the soil?", a: "Roots", wrong: ["Leaves", "Petals", "Stem"], fact: "Roots also hold the plant firmly in the ground." },
+  { q: "What is 7 × 8?", a: "56", wrong: ["54", "48", "64"], fact: "A handy trick: 5, 6, 7, 8 → 56 = 7 × 8." },
+  { q: "Which language builds the structure of a web page?", a: "HTML", wrong: ["CSS", "SQL", "JPEG"], fact: "HTML builds the structure, and CSS styles it." },
+];
+
+function Quiz({ onWin, onRestart, onHome }: GameProps) {
+  const [items] = useState(() =>
+    shuffle(QUIZ_BANK)
+      .slice(0, QUIZ_TOTAL)
+      .map((it) => ({ ...it, options: shuffle([it.a, ...it.wrong]) }))
+  );
+  const [idx, setIdx] = useState(0);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(QUIZ_SECONDS);
+  const [score, setScore] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [fiftyUsed, setFiftyUsed] = useState(false);
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [finished, setFinished] = useState(false);
+
+  const item = items[Math.min(idx, QUIZ_TOTAL - 1)];
+
+  useEffect(() => {
+    if (finished || picked !== null) return;
+    const id = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(id);
+  }, [finished, picked, idx]);
+
+  useEffect(() => {
+    if (!finished && picked === null && timeLeft <= 0) {
+      setPicked("__timeout__");
+      setStreak(0);
+    }
+  }, [timeLeft, picked, finished]);
+
+  const answer = (opt: string) => {
+    if (picked !== null) return;
+    setPicked(opt);
+    if (opt === item.a) {
+      setCorrect((c) => c + 1);
+      setScore((s) => s + 10 + timeLeft + Math.min(streak, 4) * 2);
+      setStreak((s) => s + 1);
+    } else {
+      setStreak(0);
+    }
+  };
+
+  const removeTwo = () => {
+    if (fiftyUsed || picked !== null) return;
+    setHidden(shuffle(item.options.filter((o) => o !== item.a)).slice(0, 2));
+    setFiftyUsed(true);
+  };
+
+  const next = () => {
+    if (idx + 1 >= QUIZ_TOTAL) {
+      setFinished(true);
+      if (correct >= QUIZ_PASS) onWin();
+      return;
+    }
+    setIdx((i) => i + 1);
+    setPicked(null);
+    setHidden([]);
+    setTimeLeft(QUIZ_SECONDS);
+  };
+
+  if (finished) {
+    return (
+      <ResultCard
+        won={correct >= QUIZ_PASS}
+        delay={0.2}
+        message={`You got ${correct} of ${QUIZ_TOTAL} right and scored ${score} points. You need ${QUIZ_PASS} to win.`}
+        onAgain={onRestart}
+        onHome={onHome}
+      />
+    );
+  }
+
+  const letters = ["A", "B", "C", "D"];
+
+  return (
+    <div className="mx-auto max-w-xl">
+      <div className="mb-3 flex items-center justify-between text-sm font-semibold">
+        <span className="text-slate-500">
+          Question {idx + 1}/{QUIZ_TOTAL}
+        </span>
+        <span className="rounded-full bg-indigo-100 px-3 py-1 text-indigo-700">{score} pts</span>
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${
+            streak >= 2 ? "bg-orange-100 text-orange-600" : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          <Flame size={14} />
+          {streak}
+        </span>
+      </div>
+
+      <div className="mb-5 h-2.5 overflow-hidden rounded-full bg-slate-100">
+        <motion.div
+          className={`h-full rounded-full ${timeLeft <= 5 ? "bg-rose-500" : "bg-indigo-500"}`}
+          animate={{ width: `${(timeLeft / QUIZ_SECONDS) * 100}%` }}
+          transition={{ duration: picked === null ? 1 : 0.2, ease: "linear" }}
+        />
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -40 }}
+          transition={{ duration: 0.2 }}
+        >
+          <h2 className="mb-5 text-center text-xl font-extrabold sm:text-2xl">{item.q}</h2>
+
+          <div className="grid gap-3">
+            {item.options.map((opt, i) => {
+              const isHidden = hidden.includes(opt);
+              const showResult = picked !== null;
+              const isAnswer = showResult && opt === item.a;
+              const isWrong = showResult && picked === opt && opt !== item.a;
+              return (
+                <motion.button
+                  key={opt}
+                  onClick={() => answer(opt)}
+                  disabled={isHidden || showResult}
+                  whileHover={!showResult && !isHidden ? { x: 4 } : undefined}
+                  whileTap={!showResult && !isHidden ? { scale: 0.97 } : undefined}
+                  animate={{
+                    opacity: isHidden ? 0.15 : showResult && !isAnswer && !isWrong ? 0.5 : 1,
+                    x: isWrong ? [0, -8, 8, -6, 6, 0] : 0,
+                  }}
+                  className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-base font-semibold transition-colors ${
+                    isAnswer
+                      ? "bg-emerald-500 text-white"
+                      : isWrong
+                        ? "bg-rose-500 text-white"
+                        : "bg-indigo-50 text-indigo-900 ring-2 ring-indigo-100 hover:bg-indigo-100"
+                  }`}
+                >
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
+                      isAnswer || isWrong ? "bg-white/25" : "bg-white text-indigo-600"
+                    }`}
+                  >
+                    {letters[i]}
+                  </span>
+                  {opt}
+                </motion.button>
+              );
+            })}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="mt-5 min-h-24">
+        {picked === null ? (
+          <div className="text-center">
+            <SmallBtn onClick={removeTwo} icon={<Sparkles size={16} />}>
+              {fiftyUsed ? "50/50 used" : "50/50"}
+            </SmallBtn>
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <p
+              className={`mx-auto max-w-md rounded-xl px-4 py-3 text-sm ${
+                picked === item.a ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"
+              }`}
+            >
+              <span className="font-bold">
+                {picked === item.a
+                  ? "Correct!"
+                  : picked === "__timeout__"
+                    ? `Time's up! The answer is ${item.a}.`
+                    : `Not quite. The answer is ${item.a}.`}
+              </span>{" "}
+              {item.fact}
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={next}
+              className="mt-3 rounded-xl bg-indigo-600 px-6 py-2.5 font-semibold text-white"
+            >
+              {idx + 1 >= QUIZ_TOTAL ? "See results" : "Next question"}
+            </motion.button>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Game: Pattern Memory (Simon Says)                                   */
+/* ------------------------------------------------------------------ */
+
+const SIMON_GOAL = 8;
+
+const PADS = [
+  { base: "bg-emerald-400", glow: "ring-emerald-200" },
+  { base: "bg-rose-400", glow: "ring-rose-200" },
+  { base: "bg-amber-400", glow: "ring-amber-200" },
+  { base: "bg-sky-400", glow: "ring-sky-200" },
+];
+
+function Simon({ onWin, onRestart, onHome }: GameProps) {
+  const [seq, setSeq] = useState<number[]>([]);
+  const [phase, setPhase] = useState<"ready" | "show" | "input" | "won" | "lost">("ready");
+  const [lit, setLit] = useState<number | null>(null);
+  const [step, setStep] = useState(0);
+
+  const randomPad = () => Math.floor(Math.random() * 4);
+
+  useEffect(() => {
+    if (phase !== "show") return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    seq.forEach((pad, i) => {
+      timers.push(setTimeout(() => setLit(pad), 700 + i * 700));
+      timers.push(setTimeout(() => setLit(null), 700 + i * 700 + 450));
+    });
+    timers.push(
+      setTimeout(() => {
+        setStep(0);
+        setPhase("input");
+      }, 700 + seq.length * 700)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [phase, seq]);
+
+  const start = () => {
+    setSeq([randomPad()]);
+    setPhase("show");
+  };
+
+  const press = (pad: number) => {
+    if (phase !== "input") return;
+    setLit(pad);
+    setTimeout(() => setLit(null), 200);
+
+    if (pad !== seq[step]) {
+      setPhase("lost");
+      return;
+    }
+    if (step + 1 === seq.length) {
+      if (seq.length >= SIMON_GOAL) {
+        setPhase("won");
+        onWin();
+      } else {
+        setSeq((s) => [...s, randomPad()]);
+        setPhase("show");
+      }
+    } else {
+      setStep((s) => s + 1);
+    }
+  };
+
+  const status =
+    phase === "show"
+      ? "Watch carefully..."
+      : phase === "input"
+        ? `Your turn! ${step}/${seq.length}`
+        : `Repeat ${SIMON_GOAL} steps in a row to win.`;
+
+  return (
+    <div className="mx-auto max-w-sm text-center">
+      <p className="mb-1 text-sm text-slate-500">Round {Math.max(seq.length, 1)} of {SIMON_GOAL}</p>
+      <motion.p
+        key={status}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-5 h-6 font-semibold text-pink-600"
+      >
+        {phase === "won" || phase === "lost" ? "" : status}
+      </motion.p>
+
+      <div className="grid grid-cols-2 gap-3">
+        {PADS.map((pad, i) => (
+          <motion.button
+            key={i}
+            onClick={() => press(i)}
+            disabled={phase !== "input"}
+            animate={{
+              scale: lit === i ? 1.06 : 1,
+              filter: lit === i ? "brightness(1.35)" : phase === "input" ? "brightness(1)" : "brightness(0.8)",
+            }}
+            whileTap={phase === "input" ? { scale: 0.94 } : undefined}
+            transition={{ duration: 0.12 }}
+            className={`aspect-square rounded-3xl shadow-md ${pad.base} ${
+              lit === i ? `ring-8 ${pad.glow}` : ""
+            }`}
+            aria-label={`Pad ${i + 1}`}
+          />
+        ))}
+      </div>
+
+      {phase === "ready" && (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={start}
+          className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-pink-500 to-fuchsia-600 px-8 py-4 text-lg font-bold text-white shadow-md"
+        >
+          <Play size={20} fill="currentColor" />
+          Start
+        </motion.button>
+      )}
+
+      {phase === "won" && (
+        <ResultCard
+          won
+          message={`Amazing memory! You repeated all ${SIMON_GOAL} steps.`}
+          onAgain={onRestart}
+          onHome={onHome}
+        />
+      )}
+      {phase === "lost" && (
+        <ResultCard
+          won={false}
+          message={`Wrong pad! You remembered ${seq.length - 1} ${seq.length - 1 === 1 ? "step" : "steps"}.`}
+          onAgain={onRestart}
+          onHome={onHome}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Game: Typing Race                                                   */
+/* ------------------------------------------------------------------ */
+
+const TYPE_TIME = 45;
+const TYPE_GOAL = 10;
+
+function Typing({ onWin, onRestart, onHome }: GameProps) {
+  const [started, setStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(TYPE_TIME);
+  const [score, setScore] = useState(0);
+  const [entry, setEntry] = useState(() => pickWord());
+  const [value, setValue] = useState("");
+  const [errors, setErrors] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const won = score >= TYPE_GOAL;
+  const lost = started && !won && timeLeft <= 0;
+  const over = won || lost;
+
+  useEffect(() => {
+    if (!started || over) return;
+    const id = setInterval(() => setTimeLeft((t) => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(id);
+  }, [started, over]);
+
+  useEffect(() => {
+    if (started && !over) inputRef.current?.focus();
+  }, [started, over]);
+
+  const onChange = (raw: string) => {
+    if (over) return;
+    const v = raw.toUpperCase().replace(/[^A-Z]/g, "");
+    const word = entry.word;
+    if (v.length > value.length && v[v.length - 1] !== word[v.length - 1]) {
+      setErrors((n) => n + 1);
+    }
+    if (v === word) {
+      const next = score + 1;
+      setScore(next);
+      setValue("");
+      if (next >= TYPE_GOAL) onWin();
+      else setEntry(pickWord());
+    } else {
+      setValue(v.slice(0, word.length));
+    }
+  };
+
+  if (!started) {
+    return (
+      <div className="text-center">
+        <Keyboard size={48} className="mx-auto text-teal-500" />
+        <h2 className="mt-3 text-2xl font-extrabold">Ready to type?</h2>
+        <p className="mx-auto mt-2 max-w-sm text-slate-500">
+          Type {TYPE_GOAL} words in {TYPE_TIME} seconds. Letters turn green when they are right and red when they are wrong.
+        </p>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setStarted(true)}
+          className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-teal-400 to-cyan-600 px-8 py-4 text-lg font-bold text-white shadow-md"
+        >
+          <Play size={20} fill="currentColor" />
+          Start
+        </motion.button>
+      </div>
+    );
+  }
+
+  if (over) {
+    return (
+      <ResultCard
+        won={won}
+        message={
+          won
+            ? `${TYPE_GOAL} words in ${TYPE_TIME - timeLeft} seconds with ${errors} ${errors === 1 ? "mistake" : "mistakes"}!`
+            : `You typed ${score} of ${TYPE_GOAL} words. Keep practising!`
+        }
+        onAgain={onRestart}
+        onHome={onHome}
+      />
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-md text-center" onClick={() => inputRef.current?.focus()}>
+      <div className="mb-4 flex items-center justify-between text-sm font-semibold">
+        <span className="rounded-full bg-teal-100 px-3 py-1 text-teal-700">
+          Words {score}/{TYPE_GOAL}
+        </span>
+        <span className="text-slate-500">{timeLeft}s</span>
+      </div>
+
+      <div className="mb-8 h-2.5 overflow-hidden rounded-full bg-slate-100">
+        <motion.div
+          className={`h-full rounded-full ${timeLeft <= 10 ? "bg-rose-500" : "bg-teal-500"}`}
+          animate={{ width: `${(timeLeft / TYPE_TIME) * 100}%` }}
+          transition={{ duration: 1, ease: "linear" }}
+        />
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={score}
+          initial={{ y: 30, opacity: 0, scale: 0.9 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: -30, opacity: 0 }}
+          transition={{ duration: 0.18 }}
+        >
+          <div className="mb-2 flex justify-center gap-1.5 text-5xl font-extrabold tracking-wider sm:text-6xl">
+            {entry.word.split("").map((ch, i) => (
+              <span
+                key={i}
+                className={`border-b-4 ${
+                  i < value.length
+                    ? value[i] === ch
+                      ? "border-emerald-400 text-emerald-600"
+                      : "border-rose-400 text-rose-500"
+                    : i === value.length
+                      ? "border-teal-400 text-slate-300"
+                      : "border-transparent text-slate-300"
+                }`}
+              >
+                {ch}
+              </span>
+            ))}
+          </div>
+          <p className="text-sm text-slate-400">{entry.topic}: {entry.hint}</p>
+        </motion.div>
+      </AnimatePresence>
+
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete="off"
+        autoCapitalize="characters"
+        autoCorrect="off"
+        spellCheck={false}
+        placeholder="Start typing..."
+        className="mt-8 w-full rounded-xl border-2 border-teal-200 px-4 py-3 text-center text-xl font-bold uppercase outline-none focus:border-teal-400"
+      />
+      <p className="mt-3 text-xs text-slate-400">Mistakes: {errors}</p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Game: Tower of Hanoi                                                */
+/* ------------------------------------------------------------------ */
+
+const DISC_COLORS = [
+  "bg-rose-400",
+  "bg-orange-400",
+  "bg-amber-400",
+  "bg-emerald-400",
+  "bg-sky-400",
+  "bg-violet-400",
+];
+
+function newPegs(n: number): number[][] {
+  return [Array.from({ length: n }, (_, i) => n - i), [], []];
+}
+
+function Hanoi({ onWin, onRestart, onHome }: GameProps) {
+  const [n, setN] = useState(3);
+  const [pegs, setPegs] = useState<number[][]>(() => newPegs(3));
+  const [selected, setSelected] = useState<number | null>(null);
+  const [moves, setMoves] = useState(0);
+  const [msg, setMsg] = useState("");
+  const won = pegs[2].length === n;
+  const best = 2 ** n - 1;
+
+  const changeN = (count: number) => {
+    setN(count);
+    setPegs(newPegs(count));
+    setSelected(null);
+    setMoves(0);
+    setMsg("");
+  };
+
+  const tap = (i: number) => {
+    if (won) return;
+    if (selected === null) {
+      if (pegs[i].length) setSelected(i);
+      return;
+    }
+    if (selected === i) {
+      setSelected(null);
+      return;
+    }
+    const from = pegs[selected];
+    const to = pegs[i];
+    const disc = from[from.length - 1];
+    if (to.length && to[to.length - 1] < disc) {
+      setMsg("A bigger disc can't go on top of a smaller one.");
+      setTimeout(() => setMsg(""), 1800);
+      setSelected(null);
+      return;
+    }
+    const next = pegs.map((p) => [...p]);
+    next[selected].pop();
+    next[i].push(disc);
+    setPegs(next);
+    setSelected(null);
+    setMoves((m) => m + 1);
+    setMsg("");
+    if (next[2].length === n) onWin();
+  };
+
+  return (
+    <div className="mx-auto max-w-lg text-center">
+      <div className="mb-4 flex justify-center gap-2">
+        {[3, 4, 5].map((c) => (
+          <button
+            key={c}
+            onClick={() => changeN(c)}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+              n === c
+                ? "bg-lime-600 text-white"
+                : "bg-lime-100 text-lime-700 hover:bg-lime-200"
+            }`}
+          >
+            {c} discs
+          </button>
+        ))}
+      </div>
+
+      <p className="mb-4 text-sm text-slate-500">
+        Move the whole tower to the right peg. Tap a peg to pick up its top disc, then tap where to put it. Never put a big disc on a small one.
+      </p>
+
+      <div className="mb-4 flex justify-center gap-3">
+        <div className="min-w-24 rounded-xl bg-lime-50 px-4 py-2">
+          <p className="text-xs text-slate-500">Moves</p>
+          <p className="text-lg font-bold text-lime-700">{moves}</p>
+        </div>
+        <div className="min-w-24 rounded-xl bg-lime-50 px-4 py-2">
+          <p className="text-xs text-slate-500">Best possible</p>
+          <p className="text-lg font-bold text-lime-700">{best}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {pegs.map((peg, i) => (
+          <button
+            key={i}
+            onClick={() => tap(i)}
+            aria-label={`Peg ${i + 1}`}
+            className={`relative flex h-56 flex-col-reverse items-center rounded-2xl pb-2 transition-colors ${
+              selected === i ? "bg-lime-100 ring-2 ring-lime-400" : "bg-slate-50 hover:bg-slate-100"
+            }`}
+          >
+            <div className="absolute bottom-0 h-3 w-full rounded-b-2xl bg-slate-300" />
+            <div className="absolute bottom-2 top-4 w-2 rounded-full bg-slate-300" />
+            {peg.map((d, idx) => {
+              const lifted = selected === i && idx === peg.length - 1;
+              return (
+                <motion.div
+                  key={d}
+                  layout
+                  layoutId={`disc-${n}-${d}`}
+                  animate={{ scale: lifted ? 1.08 : 1 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  className={`relative z-10 mb-1 h-8 rounded-full shadow ${DISC_COLORS[d - 1]} ${
+                    lifted ? "ring-4 ring-white" : ""
+                  }`}
+                  style={{ width: `${30 + (d * 60) / n}%` }}
+                />
+              );
+            })}
+          </button>
+        ))}
+      </div>
+
+      <div className="h-8">
+        <AnimatePresence>
+          {msg && (
+            <motion.p
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mt-3 text-sm font-semibold text-rose-500"
+            >
+              {msg}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {won ? (
+        <ResultCard
+          won
+          message={
+            moves === best
+              ? `Perfect! You solved it in the minimum ${best} moves.`
+              : `Solved in ${moves} moves. The best possible is ${best}. Can you beat it?`
+          }
+          onAgain={onRestart}
+          onHome={onHome}
+        />
+      ) : (
+        <div className="mt-3">
+          <SmallBtn onClick={() => changeN(n)} icon={<RotateCcw size={16} />}>
+            Reset
+          </SmallBtn>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
@@ -1215,6 +2137,16 @@ export default function GamesPage() {
         return <Guess key={round} {...props} />;
       case "sliding":
         return <Sliding key={round} {...props} />;
+      case "simon":
+        return <Simon key={round} {...props} />;
+      case "sprint":
+        return <Sprint key={round} {...props} />;
+      case "typing":
+        return <Typing key={round} {...props} />;
+      case "hanoi":
+        return <Hanoi key={round} {...props} />;
+      case "quiz":
+        return <Quiz key={round} {...props} />;
       default:
         return null;
     }
