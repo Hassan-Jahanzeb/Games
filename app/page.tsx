@@ -116,79 +116,73 @@ const GAMES: {
   button: string;
   soft: string;
 }[] = [
-  {
-    id: "hangman",
-    name: "Hangman",
-    blurb: "Guess the word before you run out of lives.",
-    Icon: SpellCheck,
-    button: "from-violet-500 to-purple-600",
-    soft: "bg-violet-100 text-violet-700",
-  },
-  {
-    id: "scramble",
-    name: "Word Scramble",
-    blurb: "Tap the letters to build the right word.",
-    Icon: Shuffle,
-    button: "from-orange-400 to-rose-500",
-    soft: "bg-orange-100 text-orange-700",
-  },
-  {
-    id: "guess",
-    name: "Word Guessing",
-    blurb: "Use clues and colours to crack the secret word.",
-    Icon: Lightbulb,
-    button: "from-emerald-400 to-teal-600",
-    soft: "bg-emerald-100 text-emerald-700",
-  },
-  {
-    id: "sliding",
-    name: "Sliding Tile",
-    blurb: "Slide the tiles into number order.",
-    Icon: Grid3X3,
-    button: "from-sky-400 to-blue-600",
-    soft: "bg-sky-100 text-sky-700",
-  },
-  {
-    id: "sprint",
-    name: "Math Sprint",
-    blurb: "Solve as many sums as you can before time runs out.",
-    Icon: Calculator,
-    button: "from-amber-400 to-orange-600",
-    soft: "bg-amber-100 text-amber-700",
-  },
-  {
-    id: "quiz",
-    name: "Quiz Battle",
-    blurb: "Answer quick questions and build a streak.",
-    Icon: GraduationCap,
-    button: "from-indigo-500 to-blue-700",
-    soft: "bg-indigo-100 text-indigo-700",
-  },
-  {
-    id: "simon",
-    name: "Pattern Memory",
-    blurb: "Watch the colour pattern, then repeat it.",
-    Icon: Brain,
-    button: "from-pink-500 to-fuchsia-600",
-    soft: "bg-pink-100 text-pink-700",
-  },
-  {
-    id: "typing",
-    name: "Typing Race",
-    blurb: "Type the words before the timer runs out.",
-    Icon: Keyboard,
-    button: "from-teal-400 to-cyan-600",
-    soft: "bg-cyan-100 text-cyan-700",
-  },
-  {
-    id: "hanoi",
-    name: "Tower of Hanoi",
-    blurb: "Move the whole tower to the last peg.",
-    Icon: Layers,
-    button: "from-lime-500 to-green-600",
-    soft: "bg-lime-100 text-lime-700",
-  },
-];
+
+    {
+      id: "sliding",
+      name: "Sliding Tile",
+      blurb: "Slide the tiles into number order.",
+      Icon: Grid3X3,
+      button: "from-sky-400 to-blue-600",
+      soft: "bg-sky-100 text-sky-700",
+    },
+    {
+      id: "sprint",
+      name: "Math Sprint",
+      blurb: "Solve as many sums as you can before time runs out.",
+      Icon: Calculator,
+      button: "from-amber-400 to-orange-600",
+      soft: "bg-amber-100 text-amber-700",
+    },
+    {
+      id: "simon",
+      name: "Pattern Memory",
+      blurb: "Watch the colour pattern, then repeat it.",
+      Icon: Brain,
+      button: "from-pink-500 to-fuchsia-600",
+      soft: "bg-pink-100 text-pink-700",
+    },
+    {
+      id: "hanoi",
+      name: "Tower of Hanoi",
+      blurb: "Move the whole tower to the last peg.",
+      Icon: Layers,
+      button: "from-lime-500 to-green-600",
+      soft: "bg-lime-100 text-lime-700",
+    },
+    {
+      id: "scramble",
+      name: "Word Scramble",
+      blurb: "Tap the letters to build the right word.",
+      Icon: Shuffle,
+      button: "from-orange-400 to-rose-500",
+      soft: "bg-orange-100 text-orange-700",
+    },
+    {
+      id: "guess",
+      name: "Word Guessing",
+      blurb: "Use clues and colours to crack the secret word.",
+      Icon: Lightbulb,
+      button: "from-emerald-400 to-teal-600",
+      soft: "bg-emerald-100 text-emerald-700",
+    },
+    {
+      id: "quiz",
+      name: "Quiz Battle",
+      blurb: "Answer quick questions and build a streak.",
+      Icon: GraduationCap,
+      button: "from-indigo-500 to-blue-700",
+      soft: "bg-indigo-100 text-indigo-700",
+    },
+
+    {
+      id: "typing",
+      name: "Typing Race",
+      blurb: "Type the words before the timer runs out.",
+      Icon: Keyboard,
+      button: "from-teal-400 to-cyan-600",
+      soft: "bg-cyan-100 text-cyan-700",
+    },
+  ];
 
 /* ------------------------------------------------------------------ */
 /* Shared UI                                                           */
@@ -259,11 +253,10 @@ function ResultCard({
         initial={{ opacity: 0, scale: 0.85, y: 24 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 280, damping: 20, delay }}
-        className={`mt-6 rounded-2xl border p-6 text-center ${
-          won
-            ? "border-emerald-200 bg-emerald-50"
-            : "border-rose-200 bg-rose-50"
-        }`}
+        className={`mt-6 rounded-2xl border p-6 text-center ${won
+          ? "border-emerald-200 bg-emerald-50"
+          : "border-rose-200 bg-rose-50"
+          }`}
         role="status"
       >
         <motion.div
@@ -279,9 +272,8 @@ function ResultCard({
           )}
         </motion.div>
         <h3
-          className={`text-2xl font-extrabold ${
-            won ? "text-emerald-700" : "text-rose-700"
-          }`}
+          className={`text-2xl font-extrabold ${won ? "text-emerald-700" : "text-rose-700"
+            }`}
         >
           {won ? "You won!" : "Good try!"}
         </h3>
@@ -412,9 +404,8 @@ function Hangman({
       <motion.div animate={shake} className="mb-4 flex justify-center">
         <svg
           viewBox="0 0 220 210"
-          className={`h-48 w-52 transition-colors duration-500 ${
-            lost ? "text-rose-500" : "text-slate-700"
-          }`}
+          className={`h-48 w-52 transition-colors duration-500 ${lost ? "text-rose-500" : "text-slate-700"
+            }`}
           fill="none"
           stroke="currentColor"
           strokeWidth="4"
@@ -444,9 +435,8 @@ function Hangman({
           return (
             <div
               key={i}
-              className={`flex h-12 w-9 items-center justify-center border-b-4 text-2xl font-extrabold sm:h-14 sm:w-11 ${
-                reveal ? "border-rose-300" : "border-violet-300"
-              }`}
+              className={`flex h-12 w-9 items-center justify-center border-b-4 text-2xl font-extrabold sm:h-14 sm:w-11 ${reveal ? "border-rose-300" : "border-violet-300"
+                }`}
             >
               <AnimatePresence>
                 {(shown || reveal) && (
@@ -491,13 +481,12 @@ function Hangman({
                 whileHover={used ? undefined : { y: -2 }}
                 whileTap={used ? undefined : { scale: 0.88 }}
                 animate={used ? { scale: [1, 1.2, 1] } : {}}
-                className={`h-11 rounded-lg text-sm font-bold ${
-                  used
-                    ? correct
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-rose-100 text-rose-400 line-through"
-                    : "bg-slate-100 text-slate-700 hover:bg-violet-100"
-                }`}
+                className={`h-11 rounded-lg text-sm font-bold ${used
+                  ? correct
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-rose-100 text-rose-400 line-through"
+                  : "bg-slate-100 text-slate-700 hover:bg-violet-100"
+                  }`}
               >
                 {letter}
               </motion.button>
@@ -631,26 +620,24 @@ function Scramble({
           return (
             <div
               key={i}
-              className={`flex h-14 w-14 items-center justify-center rounded-xl border-2 border-dashed transition-colors sm:h-16 sm:w-16 ${
-                status === "win"
-                  ? "border-emerald-400 bg-emerald-50"
-                  : status === "wrong"
-                    ? "border-rose-400 bg-rose-50"
-                    : "border-orange-200 bg-orange-50/40"
-              }`}
+              className={`flex h-14 w-14 items-center justify-center rounded-xl border-2 border-dashed transition-colors sm:h-16 sm:w-16 ${status === "win"
+                ? "border-emerald-400 bg-emerald-50"
+                : status === "wrong"
+                  ? "border-rose-400 bg-rose-50"
+                  : "border-orange-200 bg-orange-50/40"
+                }`}
             >
               {tile && (
                 <motion.button
                   layoutId={`tile-${tile.id}`}
                   onClick={() => unpick(tile)}
                   transition={{ type: "spring", stiffness: 500, damping: 32 }}
-                  className={`${tileClass} ${
-                    status === "win"
-                      ? "bg-emerald-500 text-white"
-                      : status === "wrong"
-                        ? "bg-rose-500 text-white"
-                        : "bg-orange-500 text-white"
-                  }`}
+                  className={`${tileClass} ${status === "win"
+                    ? "bg-emerald-500 text-white"
+                    : status === "wrong"
+                      ? "bg-rose-500 text-white"
+                      : "bg-orange-500 text-white"
+                    }`}
                   aria-label={`Remove letter ${tile.ch}`}
                 >
                   {tile.ch}
@@ -924,13 +911,12 @@ function Guess({
                 return (
                   <div
                     key={i}
-                    className={`flex h-11 w-11 items-center justify-center rounded-lg border-2 text-xl font-extrabold text-slate-800 transition-colors sm:h-12 sm:w-12 ${
-                      active && i === current.length
-                        ? "border-emerald-400 bg-emerald-50/50"
-                        : ch
-                          ? "border-slate-400"
-                          : "border-slate-200"
-                    }`}
+                    className={`flex h-11 w-11 items-center justify-center rounded-lg border-2 text-xl font-extrabold text-slate-800 transition-colors sm:h-12 sm:w-12 ${active && i === current.length
+                      ? "border-emerald-400 bg-emerald-50/50"
+                      : ch
+                        ? "border-slate-400"
+                        : "border-slate-200"
+                      }`}
                   >
                     {ch && (
                       <motion.span
@@ -986,15 +972,14 @@ function Guess({
                     key={ch}
                     whileTap={{ scale: 0.85 }}
                     onClick={() => type(ch)}
-                    className={`h-11 w-7 rounded-md text-sm font-bold sm:w-9 ${
-                      m === "hit"
-                        ? "bg-emerald-500 text-white"
-                        : m === "near"
-                          ? "bg-amber-400 text-white"
-                          : m === "miss"
-                            ? "bg-slate-300 text-slate-500"
-                            : "bg-slate-100 text-slate-700 hover:bg-emerald-100"
-                    }`}
+                    className={`h-11 w-7 rounded-md text-sm font-bold sm:w-9 ${m === "hit"
+                      ? "bg-emerald-500 text-white"
+                      : m === "near"
+                        ? "bg-amber-400 text-white"
+                        : m === "miss"
+                          ? "bg-slate-300 text-slate-500"
+                          : "bg-slate-100 text-slate-700 hover:bg-emerald-100"
+                      }`}
                   >
                     {ch}
                   </motion.button>
@@ -1148,13 +1133,12 @@ function Sliding({
           <button
             key={s}
             onClick={() => changeSize(s)}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-              size === s
-                ? "bg-sky-600 text-white"
-                : "bg-sky-100 text-sky-700 hover:bg-sky-200"
-            }`}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${size === s
+              ? "bg-sky-600 text-white"
+              : "bg-sky-100 text-sky-700 hover:bg-sky-200"
+              }`}
           >
-            {s === 3 ? "Easy 3×3" : "Hard 4×4"}
+            {s === 3 ? `Easy 3×3` : "Hard 4×4"}
           </button>
         ))}
       </div>
@@ -1185,11 +1169,10 @@ function Sliding({
                 aria-label={`Tile ${n}`}
               >
                 <span
-                  className={`flex h-full w-full items-center justify-center rounded-xl text-2xl font-extrabold shadow-sm transition-colors duration-300 sm:text-3xl ${
-                    home
-                      ? "bg-gradient-to-br from-sky-400 to-blue-600 text-white"
-                      : "bg-white text-slate-700"
-                  }`}
+                  className={`flex h-full w-full items-center justify-center rounded-xl text-2xl font-extrabold shadow-sm transition-colors duration-300 sm:text-3xl ${home
+                    ? "bg-gradient-to-br from-sky-400 to-blue-600 text-white"
+                    : "bg-white text-slate-700"
+                    }`}
                 >
                   {n}
                 </span>
@@ -1360,9 +1343,8 @@ function Sprint({ onWin, onRestart, onHome }: GameProps) {
         </span>
         <span className="text-slate-500">{timeLeft}s</span>
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${
-            streak >= 3 ? "bg-orange-100 text-orange-600" : "bg-slate-100 text-slate-500"
-          }`}
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${streak >= 3 ? "bg-orange-100 text-orange-600" : "bg-slate-100 text-slate-500"
+            }`}
         >
           <Flame size={14} />
           {streak}
@@ -1399,13 +1381,12 @@ function Sprint({ onWin, onRestart, onHome }: GameProps) {
                   whileTap={picked === null ? { scale: 0.93 } : undefined}
                   animate={isWrong ? { x: [0, -8, 8, -6, 6, 0] } : {}}
                   onClick={() => choose(opt)}
-                  className={`rounded-2xl py-5 text-2xl font-extrabold transition-colors ${
-                    isAnswer
-                      ? "bg-emerald-500 text-white"
-                      : isWrong
-                        ? "bg-rose-500 text-white"
-                        : "bg-amber-50 text-amber-800 ring-2 ring-amber-200 hover:bg-amber-100"
-                  }`}
+                  className={`rounded-2xl py-5 text-2xl font-extrabold transition-colors ${isAnswer
+                    ? "bg-emerald-500 text-white"
+                    : isWrong
+                      ? "bg-rose-500 text-white"
+                      : "bg-amber-50 text-amber-800 ring-2 ring-amber-200 hover:bg-amber-100"
+                    }`}
                 >
                   {opt}
                 </motion.button>
@@ -1537,9 +1518,8 @@ function Quiz({ onWin, onRestart, onHome }: GameProps) {
         </span>
         <span className="rounded-full bg-indigo-100 px-3 py-1 text-indigo-700">{score} pts</span>
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${
-            streak >= 2 ? "bg-orange-100 text-orange-600" : "bg-slate-100 text-slate-500"
-          }`}
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${streak >= 2 ? "bg-orange-100 text-orange-600" : "bg-slate-100 text-slate-500"
+            }`}
         >
           <Flame size={14} />
           {streak}
@@ -1581,18 +1561,16 @@ function Quiz({ onWin, onRestart, onHome }: GameProps) {
                     opacity: isHidden ? 0.15 : showResult && !isAnswer && !isWrong ? 0.5 : 1,
                     x: isWrong ? [0, -8, 8, -6, 6, 0] : 0,
                   }}
-                  className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-base font-semibold transition-colors ${
-                    isAnswer
-                      ? "bg-emerald-500 text-white"
-                      : isWrong
-                        ? "bg-rose-500 text-white"
-                        : "bg-indigo-50 text-indigo-900 ring-2 ring-indigo-100 hover:bg-indigo-100"
-                  }`}
+                  className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left text-base font-semibold transition-colors ${isAnswer
+                    ? "bg-emerald-500 text-white"
+                    : isWrong
+                      ? "bg-rose-500 text-white"
+                      : "bg-indigo-50 text-indigo-900 ring-2 ring-indigo-100 hover:bg-indigo-100"
+                    }`}
                 >
                   <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
-                      isAnswer || isWrong ? "bg-white/25" : "bg-white text-indigo-600"
-                    }`}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${isAnswer || isWrong ? "bg-white/25" : "bg-white text-indigo-600"
+                      }`}
                   >
                     {letters[i]}
                   </span>
@@ -1618,9 +1596,8 @@ function Quiz({ onWin, onRestart, onHome }: GameProps) {
             className="text-center"
           >
             <p
-              className={`mx-auto max-w-md rounded-xl px-4 py-3 text-sm ${
-                picked === item.a ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"
-              }`}
+              className={`mx-auto max-w-md rounded-xl px-4 py-3 text-sm ${picked === item.a ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"
+                }`}
             >
               <span className="font-bold">
                 {picked === item.a
@@ -1741,9 +1718,8 @@ function Simon({ onWin, onRestart, onHome }: GameProps) {
             }}
             whileTap={phase === "input" ? { scale: 0.94 } : undefined}
             transition={{ duration: 0.12 }}
-            className={`aspect-square rounded-3xl shadow-md ${pad.base} ${
-              lit === i ? `ring-8 ${pad.glow}` : ""
-            }`}
+            className={`aspect-square rounded-3xl shadow-md ${pad.base} ${lit === i ? `ring-8 ${pad.glow}` : ""
+              }`}
             aria-label={`Pad ${i + 1}`}
           />
         ))}
@@ -1894,15 +1870,14 @@ function Typing({ onWin, onRestart, onHome }: GameProps) {
             {entry.word.split("").map((ch, i) => (
               <span
                 key={i}
-                className={`border-b-4 ${
-                  i < value.length
-                    ? value[i] === ch
-                      ? "border-emerald-400 text-emerald-600"
-                      : "border-rose-400 text-rose-500"
-                    : i === value.length
-                      ? "border-teal-400 text-slate-300"
-                      : "border-transparent text-slate-300"
-                }`}
+                className={`border-b-4 ${i < value.length
+                  ? value[i] === ch
+                    ? "border-emerald-400 text-emerald-600"
+                    : "border-rose-400 text-rose-500"
+                  : i === value.length
+                    ? "border-teal-400 text-slate-300"
+                    : "border-transparent text-slate-300"
+                  }`}
               >
                 {ch}
               </span>
@@ -1998,11 +1973,10 @@ function Hanoi({ onWin, onRestart, onHome }: GameProps) {
           <button
             key={c}
             onClick={() => changeN(c)}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-              n === c
-                ? "bg-lime-600 text-white"
-                : "bg-lime-100 text-lime-700 hover:bg-lime-200"
-            }`}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${n === c
+              ? "bg-lime-600 text-white"
+              : "bg-lime-100 text-lime-700 hover:bg-lime-200"
+              }`}
           >
             {c} discs
           </button>
@@ -2030,9 +2004,8 @@ function Hanoi({ onWin, onRestart, onHome }: GameProps) {
             key={i}
             onClick={() => tap(i)}
             aria-label={`Peg ${i + 1}`}
-            className={`relative flex h-56 flex-col-reverse items-center rounded-2xl pb-2 transition-colors ${
-              selected === i ? "bg-lime-100 ring-2 ring-lime-400" : "bg-slate-50 hover:bg-slate-100"
-            }`}
+            className={`relative flex h-56 flex-col-reverse items-center rounded-2xl pb-2 transition-colors ${selected === i ? "bg-lime-100 ring-2 ring-lime-400" : "bg-slate-50 hover:bg-slate-100"
+              }`}
           >
             <div className="absolute bottom-0 h-3 w-full rounded-b-2xl bg-slate-300" />
             <div className="absolute bottom-2 top-4 w-2 rounded-full bg-slate-300" />
@@ -2045,9 +2018,8 @@ function Hanoi({ onWin, onRestart, onHome }: GameProps) {
                   layoutId={`disc-${n}-${d}`}
                   animate={{ scale: lifted ? 1.08 : 1 }}
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  className={`relative z-10 mb-1 h-8 rounded-full shadow ${DISC_COLORS[d - 1]} ${
-                    lifted ? "ring-4 ring-white" : ""
-                  }`}
+                  className={`relative z-10 mb-1 h-8 rounded-full shadow ${DISC_COLORS[d - 1]} ${lifted ? "ring-4 ring-white" : ""
+                    }`}
                   style={{ width: `${30 + (d * 60) / n}%` }}
                 />
               );
